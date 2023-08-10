@@ -3,6 +3,9 @@ import { Container, Row, Col, Form } from "react-bootstrap";
 import { CircularProgress, TextField, Button } from "@material-ui/core";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { errorToast, successToast } from "../service/toastify.services";
+import { useDispatch } from "react-redux";
+import { login } from "../slice/LoginSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,23 +13,36 @@ const Login = () => {
   const [loading, setloading] = useState(false);
 
   const navigate = useNavigate();
+
+  const dispatch = useDispatch();
+
   const loginSubmitHandler = async (e) => {
+    e.preventDefault();
     try {
-      e.preventDefault();
       setloading(true);
-      console.log({ email, password });
-      const response = await axios.post(
+
+      const { data } = await axios.post(
         import.meta.env.VITE_SERVER_URL + "/api/v1/auth/login",
         { email, password }
       );
-      console.log(response.data);
 
-      if (response.data.status) {
+      if (data.status) {
+        // dispatch
+
+        const loginData = {
+          name: data.authData.name,
+          jwt: data.token,
+          email: data.authData.email,
+          role: data.authData.role,
+        };
+        console.log(loginData);
+        dispatch(login(loginData));
         navigate("/home");
+        successToast("Login Successfull");
         setloading(false);
       }
     } catch (error) {
-      console.log(error);
+      errorToast(error.response.data.error);
       setloading(false);
     }
   };

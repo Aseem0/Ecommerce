@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Form } from "react-bootstrap";
 import { CircularProgress, TextField, Button } from "@material-ui/core";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import {
+  errorToast,
+  successToast,
+  warningToast,
+} from "../service/toastify.services";
 
 const SignUp = () => {
   const [name, setName] = useState("");
@@ -11,18 +16,29 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setloading] = useState(false);
 
+  const navigate = useNavigate();
+
   const registerSubmitHandler = async (e) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      warningTOast("Password and Confirm password must be same");
+    try {
+      setloading(true);
+      if (password !== confirmPassword) {
+        warningToast("Password and Confirm password must be same");
+      } else {
+        const { data } = await axios.post(
+          import.meta.env.VITE_SERVER_URL + "/api/v1/auth/register",
+          { name, email, password }
+        );
+        if (data.status) {
+          navigate("/");
+          successToast(data.message);
+        }
+        setloading(false);
+      }
+    } catch ({ response }) {
+      errorToast(response.data.error);
+      setloading(false);
     }
-    setloading(true);
-
-    const response = await axios.post(
-      import.meta.env.VITE_SERVER_URL + "/api/v1/auth/register",
-      { name, email, password }
-    );
   };
   return (
     <Container>
@@ -80,7 +96,7 @@ const SignUp = () => {
             />
             <TextField
               variant="outlined"
-              type="confirmPassword"
+              type="password"
               placeholder="******"
               className="mb-4"
               required
